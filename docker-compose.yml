@@ -12,6 +12,8 @@ services:
       - ${PROJECTSEND_DATA_DIR:-./data}:/data
       - ${CERTBOT_CERTS_DIR:-./certbot/conf}:/etc/letsencrypt
       - ${CERTBOT_WWW_DIR:-./certbot/www}:/var/www/certbot
+      - ./custom/header-top.php:/app/www/public/includes/layout/header-top.php
+      - ./custom:/app/www/public/custom
     ports:
       - "${PROJECTSEND_PORT:-80}:80"
       - "${PROJECTSEND_SSL_PORT:-443}:443"
