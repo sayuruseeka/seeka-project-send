@@ -1,0 +1,55 @@
+---
+services:
+  projectsend:
+    image: lscr.io/linuxserver/projectsend:latest
+    container_name: projectsend
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - ${PROJECTSEND_CONFIG_DIR:-./config}:/config
+      - ${PROJECTSEND_DATA_DIR:-./data}:/data
+      - ${CERTBOT_CERTS_DIR:-./certbot/conf}:/etc/letsencrypt
+      - ${CERTBOT_WWW_DIR:-./certbot/www}:/var/www/certbot
+    ports:
+      - "${PROJECTSEND_PORT:-80}:80"
+      - "${PROJECTSEND_SSL_PORT:-443}:443"
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    networks:
+      - projectsend-network
+
+  mysql:
+    image: mysql:8.4
+    container_name: projectsend-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-projectsend}
+      - MYSQL_USER=${MYSQL_USER:-projectsend}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-projectsendpass123}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - projectsend-network
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: projectsend-certbot
+    volumes:
+      - ${CERTBOT_CERTS_DIR:-./certbot/conf}:/etc/letsencrypt
+      - ${CERTBOT_WWW_DIR:-./certbot/www}:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email -d ${DOMAIN_NAME}
+    depends_on:
+      - projectsend
+    networks:
+      - projectsend-network
+
+networks:
+  projectsend-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
